@@ -1,6 +1,6 @@
 import imutils
 import cv2
-from skimage import pyramid_gaussian
+from skimage.transform import pyramid_gaussian
 
 
 def pyramids(image, scale = 1.5, minSize = (30, 30)):
@@ -16,4 +16,9 @@ def pyramids(image, scale = 1.5, minSize = (30, 30)):
         yield image
         
 def pyramids_method(image, downscale = 2):
-    
+    for (i, resized) in enumerate(pyramid_gaussian(image, downscale = 2)):
+        if resized.shape[0] < 30 or resized.shape[1] < 30:
+            break
+        
+        cv2.imshow("Layer {}".format(i + 1), resized)
+        cv2.waitKey(0)
