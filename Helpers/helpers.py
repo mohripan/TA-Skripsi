@@ -38,7 +38,7 @@ def get_image_from_sliding_window(image_path):
     images = []
     winH, winW = image.shape[0] // 2, image.shape[1] // 2
     
-    for (x, window) in sliding_window(image, step_size = 64, window_size = (winW, 0)):
+    for (x, window) in sliding_window(image, step_size = 64, window_size = (winW, winH)):
         if image.shape[1] > image.shape[0]:
             if window.shape[1] != winW:
                 continue
@@ -52,7 +52,7 @@ def get_image_from_sliding_window(image_path):
                 continue
             
             clone = image.copy()
-            clone = clone[y:y + winH, 0:]
+            clone = clone[x:x + winH, 0:]
             images.append(clone)
         
     return images
