@@ -1,11 +1,13 @@
 import imutils
 import cv2
+from PIL import Image
 from skimage.transform import pyramid_gaussian
 
 
-def pyramids(image, scale = 1.5, minSize = (30, 30)):
+def pyramid(image, scale = 1.5, minSize = (30, 30)):
     yield image
     
+    i = 0
     while True:
         w = int(image.shape[1] / scale)
         image = imutils.resize(image, width = w)
@@ -15,7 +17,7 @@ def pyramids(image, scale = 1.5, minSize = (30, 30)):
         
         yield image
         
-def pyramids_method(image, downscale = 2):
+def pyramid_gaussian(image, downscale = 2):
     for (i, resized) in enumerate(pyramid_gaussian(image, downscale = 2)):
         if resized.shape[0] < 30 or resized.shape[1] < 30:
             break
