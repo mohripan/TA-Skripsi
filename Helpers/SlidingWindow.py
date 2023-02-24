@@ -9,7 +9,7 @@ def main() -> int:
     args = vars(ap.parse_args())
     
     image = cv2.imread(args['image'])
-    (winW, winH) = (image.shape[1] // 6, image.shape[0] // 2)
+    (winW, winH) = (image.shape[1] // 2, image.shape[0] // 2)
     
     for (x, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
         if window.shape[1] != winW:

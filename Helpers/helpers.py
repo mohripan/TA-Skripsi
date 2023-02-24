@@ -25,21 +25,35 @@ def pyramid_gaussian(image, downscale = 2):
         cv2.waitKey(0)
         
 def sliding_window(image, step_size, window_size):
-    for x in range(0, image.shape[1], step_size):
-        yield (x, image[0:, x:x + window_size[0]])
+    if image.shape[1] > image.shape[0]:
+        for x in range(0, image.shape[1], step_size):
+            yield (x, image[0:, x:x + window_size[0]])
+            
+    else:
+        for y in range(0, image.shape[0], step_size):
+            yield(y, image[y:y + window_size[1], 0:])
             
 def get_image_from_sliding_window(image_path):
     image = cv2.imread(image_path)
     images = []
-    winW = image.shape[1] // 2
+    winH, winW = image.shape[0] // 2, image.shape[1] // 2
     
     for (x, window) in sliding_window(image, step_size = 64, window_size = (winW, 0)):
-        if window.shape[1] != winW:
-            continue
+        if image.shape[1] > image.shape[0]:
+            if window.shape[1] != winW:
+                continue
+            
+            clone = image.copy()
+            clone = clone[0:, x:x + winW, :]
+            images.append(clone)
         
-        clone = image.copy()
-        clone = clone[0:, x:x + winW, :]
-        images.append(clone)
+        else:
+            if window.shape[0] != winH:
+                continue
+            
+            clone = image.copy()
+            clone = clone[y:y + winH, 0:]
+            images.append(clone)
         
     return images
 
