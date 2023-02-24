@@ -9,14 +9,14 @@ def main() -> int:
     args = vars(ap.parse_args())
     
     image = cv2.imread(args['image'])
-    (winW, winH) = (128, image.shape[1] // 2)
+    (winW, winH) = (image.shape[1] // 6, image.shape[0] // 2)
     
-    for (x, y, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
-        if window.shape[0] != winH or window.shape[1] != winW:
+    for (x, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
+        if window.shape[1] != winW:
             continue
         
         clone = image.copy()
-        clone = clone[y:y + winH, x:x + winW, :]
+        clone = clone[0:, x:x + winW, :]
         # cv2.rectangle(clone, (x, y), (x + winW, y + winH), (0, 255, 0), 2)
         cv2.imshow('Window', clone)
         cv2.waitKey(1)
