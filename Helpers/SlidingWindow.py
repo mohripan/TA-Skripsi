@@ -1,4 +1,4 @@
-from helpers import pyramid, sliding_window
+from helpers import sliding_window
 import argparse
 import time
 import cv2
@@ -9,7 +9,7 @@ def main() -> int:
     args = vars(ap.parse_args())
     
     image = cv2.imread(args['image'])
-    (winW, winH) = (128, 128)
+    (winW, winH) = (128, image.shape[1] // 2)
     
     for (x, y, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
         if window.shape[0] != winH or window.shape[1] != winW:
