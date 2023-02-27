@@ -1,6 +1,10 @@
 import imutils
 import cv2
 import numpy as np
+import torch
+import torch.nn as nn
+from ESRGAN import RealESRGAN
+from PIL import Image
 from skimage.transform import pyramid_gaussian
 
 
@@ -58,9 +62,26 @@ def get_image_from_sliding_window(image_path):
         
     return images
 
-def stitching_image(image, crop = 1):
+def forward_prop(image, scale = 2):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = RealESRGAN(device, scale = scale)
+    model.load_weights('weights/RealESRGAN_x2.pth', download = True)
+    images = []
+    
+    for i, img in enumerate(image):
+        print(f'Image {str(i)}')
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        sr_image = model.predict(img)
+        images.append(sr_image)
+        
+    return images
+
+def stitching_image(read_images, crop = 1):
     print("[INFO] loading images...")
-    images = get_image_from_sliding_window(image)
+    images = []
+    for image in read_images:
+        image = np.array(image)
+        images.append(image)
         
     print('[INFO] stitching images...')
     stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()

@@ -1,1 +1,1 @@
-from .model import ESRGAN
+from .model import RealESRGAN
