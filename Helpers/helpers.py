@@ -6,6 +6,7 @@ import torch.nn as nn
 from ESRGAN import RealESRGAN
 from PIL import Image
 from skimage.transform import pyramid_gaussian
+torch.backends.cudnn.benchmark = True
 
 
 def pyramid(image, scale = 1.5, minSize = (30, 30)):
@@ -69,12 +70,19 @@ def forward_prop(image, scale = 2):
     images = []
     
     for i, img in enumerate(image):
-        print(f'Image {str(i)}')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         sr_image = model.predict(img)
         images.append(sr_image)
         
     return images
+
+def forward_prop_without_slide(image, scale = 2):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = RealESRGAN(device, scale = scale)
+    model.load_weights('weights/RealESRGAN_x2.pth', download = True)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    sr_image = model.predict(img)
+    return sr_image
 
 def stitching_image(read_images, crop = 1):
     print("[INFO] loading images...")
@@ -125,3 +133,13 @@ def stitching_image(read_images, crop = 1):
         print('[INFO] image stitching failed ({})'.format(status))
         
     return stitched
+
+def clahe(image):
+    image_bw = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    clahe = cv2.createCLAHE(clipLimit = 5)
+    final_img = clahe.apply(image_bw) + 30
+    
+    #_, ordinary_image = cv2.threshold(image_bw, 155, 255, cv2.THRESH_BINARY)
+    
+    return final_img
