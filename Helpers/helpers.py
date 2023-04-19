@@ -42,9 +42,9 @@ def sliding_window(image, step_size, window_size):
 def get_image_from_sliding_window(image_path):
     image = cv2.imread(image_path)
     images = []
-    winH, winW = image.shape[0] // 2, image.shape[1] // 2
+    winH, winW = (300, 300)
     
-    for (x, window) in sliding_window(image, step_size = 64, window_size = (winW, winH)):
+    for (x, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
         if image.shape[1] > image.shape[0]:
             if window.shape[1] != winW:
                 continue
@@ -63,10 +63,10 @@ def get_image_from_sliding_window(image_path):
         
     return images
 
-def forward_prop(image, scale = 2):
+def forward_prop(image, scale = 2, path = 'weights/RealESRGAN_x2.pth'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = RealESRGAN(device, scale = scale)
-    model.load_weights('weights/RealESRGAN_x2.pth', download = True)
+    model.load_weights(path, download = True)
     images = []
     
     for i, img in enumerate(image):
@@ -76,12 +76,11 @@ def forward_prop(image, scale = 2):
         
     return images
 
-def forward_prop_without_slide(image, scale = 2):
+def forward_prop_without_slide(image, scale = 2, path = 'weights/RealESRGAN_x2.pth'):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = RealESRGAN(device, scale = scale)
-    model.load_weights('weights/RealESRGAN_x2.pth', download = True)
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    sr_image = model.predict(img)
+    model.load_weights(path, download = True)
+    sr_image = model.predict(image)
     return sr_image
 
 def stitching_image(read_images, crop = 1):
@@ -134,12 +133,10 @@ def stitching_image(read_images, crop = 1):
         
     return stitched
 
-def clahe(image):
+def equalize_hist(image):
     image_bw = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     clahe = cv2.createCLAHE(clipLimit = 5)
-    final_img = clahe.apply(image_bw) + 30
-    
-    #_, ordinary_image = cv2.threshold(image_bw, 155, 255, cv2.THRESH_BINARY)
+    final_img = clahe.apply(image_bw)
     
     return final_img
