@@ -7,3 +7,6 @@ tqdm
 huggingface-hub
 stitching
 slidingwindow
+basicsr
+glob
+pytorch-pretrained-vit
