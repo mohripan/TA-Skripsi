@@ -16,8 +16,8 @@ class ImageDataset(Dataset):
         self.lr_folder = lr_folder
         self.hr_images = sorted(glob.glob(f"{hr_folder}/*.*"))
         self.lr_images = sorted(glob.glob(f"{lr_folder}/*.*"))
-        self.resize_hr = Resize((256, 256))  # Change the target size as needed
-        self.resize_lr = Resize((64, 64))    # Change the target size as needed
+        self.resize_hr = Resize((256, 256))
+        self.resize_lr = Resize((64, 64))
         self.to_tensor = ToTensor()
 
     def __getitem__(self, idx):

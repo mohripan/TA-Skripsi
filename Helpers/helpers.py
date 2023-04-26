@@ -140,3 +140,12 @@ def equalize_hist(image):
     final_img = clahe.apply(image_bw)
     
     return final_img
+
+def apply_clahe(image, clip_limit=2.0, tile_grid_size=(8, 8)):
+    # Create a CLAHE object with the specified parameters
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+
+    # Apply CLAHE to the image
+    result = clahe.apply(image)
+    
+    return result
