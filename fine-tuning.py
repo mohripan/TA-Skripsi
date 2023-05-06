@@ -1,6 +1,8 @@
 import os
+import random
 import torch
 import glob
+import argparse
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import ToTensor, Resize
 from PIL import Image
@@ -9,8 +11,16 @@ from loss_function import CombinedLoss
 from torchvision.models import vgg19
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
 
+parser = argparse.ArgumentParser(description="RealESRGAN Fine-Tuning")
+parser.add_argument("--hr_folder", type=str, default="Dataset/HighResolution", help="Path to the high-resolution images folder")
+parser.add_argument("--lr_folder", type=str, default="Dataset/LowResolution", help="Path to the low-resolution images folder")
+parser.add_argument("--hr_crop_size", type=int, default=512, help="Random crop size for high-resolution images")
+parser.add_argument("--lr_crop_size", type=int, default=128, help="Random crop size for low-resolution images")
+
+args = parser.parse_args()
+
 class ImageDataset(Dataset):
-    def __init__(self, hr_folder, lr_folder):
+    def __init__(self, hr_folder, lr_folder, hr_transforms, lr_transforms):
         self.hr_folder = hr_folder
         self.lr_folders = {
             "bicubic": os.path.join(lr_folder, "bicubic"),
@@ -19,18 +29,9 @@ class ImageDataset(Dataset):
         }
         self.hr_images = sorted(glob.glob(f"{hr_folder}/*.*"))
         self.lr_images = {method: sorted(glob.glob(f"{folder}/*.*")) for method, folder in self.lr_folders.items()}
-        self.hr_transforms = Compose([
-            RandomCrop(512),
-            RandomHorizontalFlip(),
-            ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-            ToTensor()
-        ])
-        self.lr_transforms = Compose([
-            RandomCrop(128),
-            RandomHorizontalFlip(),
-            ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
-            ToTensor()
-        ])
+        
+        self.hr_transforms = hr_transforms
+        self.lr_transforms = lr_transforms
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
@@ -39,8 +40,12 @@ class ImageDataset(Dataset):
             lr_image = Image.open(img_paths[idx]).convert("RGB")
             lr_images[method] = lr_image
 
-        hr_image = self.hr_transforms(hr_image)
-        lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
+        if self.is_train:
+            hr_image = self.train_hr_transforms(hr_image)
+            lr_images = {method: self.train_lr_transforms(img) for method, img in lr_images.items()}
+        else:
+            hr_image = self.val_transforms(hr_image)
+            lr_images = {method: self.val_transforms(img) for method, img in lr_images.items()}
 
         return {"hr": hr_image, "lr": lr_images}
 
@@ -48,17 +53,45 @@ class ImageDataset(Dataset):
         return len(self.hr_images)
     
 # Define the split_dataset function
-def split_dataset(dataset, train_ratio=0.8):
+def split_dataset(hr_folder, lr_folder, train_ratio=0.8):
+    dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms)
     train_size = int(train_ratio * len(dataset))
     val_size = len(dataset) - train_size
-    train_set, val_set = random_split(dataset, [train_size, val_size])
-    return train_set, val_set
+    indices = list(range(len(dataset)))
+    random.shuffle(indices)
 
-hr_folder = "Dataset/HighResolution"
-lr_folder = "Dataset/LowResolution"
+    train_indices = indices[:train_size]
+    val_indices = indices[train_size:]
 
-dataset = ImageDataset(hr_folder, lr_folder)
-train_set, val_set = split_dataset(dataset, train_ratio=0.8)
+    train_dataset = ImageDataset(hr_folder, lr_folder, train_hr_transforms, train_lr_transforms)
+    train_dataset.indices = train_indices
+
+    val_dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms)
+    val_dataset.indices = val_indices
+
+    return train_dataset, val_dataset
+
+# hr_folder = "Dataset/HighResolution"
+# lr_folder = "Dataset/LowResolution"
+
+train_hr_transforms = Compose([
+    RandomCrop(args.hr_crop_size),
+    RandomHorizontalFlip(),
+    ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    ToTensor()
+])
+
+train_lr_transforms = Compose([
+    RandomCrop(args.lr_crop_size),
+    RandomHorizontalFlip(),
+    ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+    ToTensor()
+])
+
+val_transforms = ToTensor()
+
+dataset = ImageDataset(args.hr_folder, args.lr_folder, args.hr_crop_size, args.lr_crop_size)
+train_set, val_set = split_dataset(args.hr_folder, args.lr_folder, train_ratio=0.8)
 train_loader = DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0)
 val_loader = DataLoader(val_set, batch_size=2, shuffle=False, num_workers=0)
 
