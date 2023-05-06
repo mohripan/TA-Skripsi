@@ -50,6 +50,7 @@ class ImageDataset(Dataset):
         self.hr_transforms = hr_transforms
         self.lr_transforms = lr_transforms
         self.is_train = is_train
+        self.random_crop = RandomCropHRandLR(args.hr_crop_size, args.lr_crop_size)
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
@@ -65,10 +66,13 @@ class ImageDataset(Dataset):
             hr_image = self.hr_transforms(hr_image)
             lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
         else:
-            hr_image = self.hr_transforms(hr_image)
-            lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
+            sample = {"hr": hr_image, "lr": lr_images}
+            transformed_sample = val_transforms_fn(sample)
+            hr_image = transformed_sample["hr"]
+            lr_images = transformed_sample["lr"]
 
         return {"hr": hr_image, "lr": lr_images}
+
 
 
 
@@ -116,10 +120,16 @@ train_lr_transforms = Compose([
     ToTensor()
 ])
 
-val_transforms = Compose([
-    Lambda(lambda sample: resize_hr_and_lr(sample["hr"], sample["lr"], (args.hr_crop_size, args.hr_crop_size), (args.lr_crop_size, args.lr_crop_size))),
-    ToTensor()
-])
+def val_transforms_fn(sample):
+    hr_image = sample["hr"]
+    lr_images = sample["lr"]
+
+    hr_image = ToTensor()(hr_image)
+    lr_images = {method: ToTensor()(img) for method, img in lr_images.items()}
+
+    return {"hr": hr_image, "lr": lr_images}
+
+val_transforms = Lambda(val_transforms_fn)
 
 train_set, val_set = split_dataset(args.hr_folder, args.lr_folder, train_ratio=0.8)
 train_loader = DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0)
