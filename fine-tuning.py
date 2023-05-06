@@ -40,12 +40,8 @@ class ImageDataset(Dataset):
             lr_image = Image.open(img_paths[idx]).convert("RGB")
             lr_images[method] = lr_image
 
-        if self.is_train:
-            hr_image = self.train_hr_transforms(hr_image)
-            lr_images = {method: self.train_lr_transforms(img) for method, img in lr_images.items()}
-        else:
-            hr_image = self.val_transforms(hr_image)
-            lr_images = {method: self.val_transforms(img) for method, img in lr_images.items()}
+        hr_image = self.hr_transforms(hr_image)
+        lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
 
         return {"hr": hr_image, "lr": lr_images}
 
