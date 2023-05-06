@@ -7,6 +7,9 @@ from PIL import Image
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from loss_function import CombinedLoss
 from torchvision.models import vgg19
+from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
+
+from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
 
 class ImageDataset(Dataset):
     def __init__(self, hr_folder, lr_folder):
@@ -18,23 +21,28 @@ class ImageDataset(Dataset):
         }
         self.hr_images = sorted(glob.glob(f"{hr_folder}/*.*"))
         self.lr_images = {method: sorted(glob.glob(f"{folder}/*.*")) for method, folder in self.lr_folders.items()}
-        self.resize_hr = Resize((512, 512))
-        self.resize_lr = Resize((128, 128))
-        self.to_tensor = ToTensor()
+        self.hr_transforms = Compose([
+            RandomCrop(512),
+            RandomHorizontalFlip(),
+            ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+            ToTensor()
+        ])
+        self.lr_transforms = Compose([
+            RandomCrop(128),
+            RandomHorizontalFlip(),
+            ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+            ToTensor()
+        ])
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
-        
         lr_images = {}
         for method, img_paths in self.lr_images.items():
             lr_image = Image.open(img_paths[idx]).convert("RGB")
             lr_images[method] = lr_image
-            
-        hr_image = self.resize_hr(hr_image)
-        lr_images = {method: self.resize_lr(img) for method, img in lr_images.items()}
-        
-        hr_image = self.to_tensor(hr_image)
-        lr_images = {method: self.to_tensor(img) for method, img in lr_images.items()}
+
+        hr_image = self.hr_transforms(hr_image)
+        lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
 
         return {"hr": hr_image, "lr": lr_images}
 
