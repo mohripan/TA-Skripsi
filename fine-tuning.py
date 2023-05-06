@@ -4,33 +4,39 @@ import glob
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import ToTensor, Resize
 from PIL import Image
-from ESRGAN.model import RealESRGAN
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from loss_function import CombinedLoss
 from torchvision.models import vgg19
-from pytorch_pretrained_vit import ViT
 
 class ImageDataset(Dataset):
     def __init__(self, hr_folder, lr_folder):
         self.hr_folder = hr_folder
-        self.lr_folder = lr_folder
+        self.lr_folders = {
+            "bicubic": os.path.join(lr_folder, "bicubic"),
+            "nearest_neighbor": os.path.join(lr_folder, "nearest_neighbor"),
+            "lanczos": os.path.join(lr_folder, "lanczos")
+        }
         self.hr_images = sorted(glob.glob(f"{hr_folder}/*.*"))
-        self.lr_images = sorted(glob.glob(f"{lr_folder}/*.*"))
-        self.resize_hr = Resize((256, 256))
-        self.resize_lr = Resize((64, 64))
+        self.lr_images = {method: sorted(glob.glob(f"{folder}/*.*")) for method, folder in self.lr_folders.items()}
+        self.resize_hr = Resize((512, 512))
+        self.resize_lr = Resize((128, 128))
         self.to_tensor = ToTensor()
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
-        lr_image = Image.open(self.lr_images[idx]).convert("RGB")
         
+        lr_images = {}
+        for method, img_paths in self.lr_images.items():
+            lr_image = Image.open(img_paths[idx]).convert("RGB")
+            lr_images[method] = lr_image
+            
         hr_image = self.resize_hr(hr_image)
-        lr_image = self.resize_lr(lr_image)
+        lr_images = {method: self.resize_lr(img) for method, img in lr_images.items()}
         
         hr_image = self.to_tensor(hr_image)
-        lr_image = self.to_tensor(lr_image)
+        lr_images = {method: self.to_tensor(img) for method, img in lr_images.items()}
 
-        return {"hr": hr_image, "lr": lr_image}
+        return {"hr": hr_image, "lr": lr_images}
 
     def __len__(self):
         return len(self.hr_images)
@@ -67,6 +73,11 @@ for param in vgg.parameters():
 # Initialize the combined loss function
 criterion = CombinedLoss(vgg, device).to(device)
 
+# Early stopping setup
+patience = 10
+epochs_without_improvement = 0
+best_val_loss = float("inf")
+
 # Training loop
 num_epochs = 50
 train_loss_values = []
@@ -79,17 +90,19 @@ for epoch in range(num_epochs):
     train_num_batches = 0
     for i, batch in enumerate(train_loader):
         hr_images = batch["hr"].to(device)
-        lr_images = batch["lr"].to(device)
 
-        optimizer.zero_grad()
+        for method, lr_images in batch["lr"].items():
+            lr_images = lr_images.to(device)
 
-        sr_images = model(lr_images)
-        loss = criterion(sr_images, hr_images)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
 
-        train_epoch_loss += loss.item()
-        train_num_batches += 1
+            sr_images = model(lr_images)
+            loss = criterion(sr_images, hr_images)
+            loss.backward()
+            optimizer.step()
+
+            train_epoch_loss += loss.item()
+            train_num_batches += 1
 
     train_average_loss = train_epoch_loss / train_num_batches
     train_loss_values.append(train_average_loss)
@@ -101,18 +114,34 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for i, batch in enumerate(val_loader):
             hr_images = batch["hr"].to(device)
-            lr_images = batch["lr"].to(device)
 
-            sr_images = model(lr_images)
-            loss = criterion(sr_images, hr_images)
+            for method, lr_images in batch["lr"].items():
+                lr_images = lr_images.to(device)
 
-            val_epoch_loss += loss.item()
-            val_num_batches += 1
+                sr_images = model(lr_images)
+                loss = criterion(sr_images, hr_images)
+
+                val_epoch_loss += loss.item()
+                val_num_batches += 1
 
     val_average_loss = val_epoch_loss / val_num_batches
     val_loss_values.append(val_average_loss)
-    
+
+    # Early stopping check
+    if val_average_loss < best_val_loss:
+        best_val_loss = val_average_loss
+        epochs_without_improvement = 0
+        # Save the best model so far
+        torch.save(model.state_dict(), "fine-tune-weights/RealESRGAN_x4_best.pth")
+    else:
+        epochs_without_improvement += 1
+
     print(f"Epoch [{epoch + 1}/{num_epochs}], Train Loss: {train_average_loss:.4f}, Val Loss: {val_average_loss:.4f}")
+
+    # Stop training if patience is exceeded
+    if epochs_without_improvement >= patience:
+        print(f"Early stopping triggered after {epoch + 1} epochs")
+        break
 
 torch.save(model.state_dict(), "fine-tune-weights/RealESRGAN_x4.pth")
 
