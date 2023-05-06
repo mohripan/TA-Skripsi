@@ -37,7 +37,7 @@ class RandomCropHRandLR:
         return hr_image, lr_images
 
 class ImageDataset(Dataset):
-    def __init__(self, hr_folder, lr_folder, hr_transforms, lr_transforms):
+    def __init__(self, hr_folder, lr_folder, hr_transforms, lr_transforms, is_train):
         self.hr_folder = hr_folder
         self.lr_folders = {
             "bicubic": os.path.join(lr_folder, "bicubic"),
@@ -49,6 +49,7 @@ class ImageDataset(Dataset):
         
         self.hr_transforms = hr_transforms
         self.lr_transforms = lr_transforms
+        self.is_train = is_train
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
@@ -76,7 +77,7 @@ class ImageDataset(Dataset):
     
 # Define the split_dataset function
 def split_dataset(hr_folder, lr_folder, train_ratio=0.8):
-    dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms)
+    dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms, False)
     train_size = int(train_ratio * len(dataset))
     val_size = len(dataset) - train_size
     indices = list(range(len(dataset)))
@@ -85,11 +86,10 @@ def split_dataset(hr_folder, lr_folder, train_ratio=0.8):
     train_indices = indices[:train_size]
     val_indices = indices[train_size:]
 
-    train_dataset = ImageDataset(hr_folder, lr_folder, train_hr_transforms, train_lr_transforms)
+    train_dataset = ImageDataset(hr_folder, lr_folder, train_hr_transforms, train_lr_transforms, True)
     train_dataset.indices = train_indices
-    train_dataset.random_crop = RandomCropHRandLR(args.hr_crop_size, args.lr_crop_size)
 
-    val_dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms)
+    val_dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms, False)
     val_dataset.indices = val_indices
 
     return train_dataset, val_dataset
@@ -121,7 +121,6 @@ val_transforms = Compose([
     ToTensor()
 ])
 
-dataset = ImageDataset(args.hr_folder, args.lr_folder, args.hr_crop_size, args.lr_crop_size)
 train_set, val_set = split_dataset(args.hr_folder, args.lr_folder, train_ratio=0.8)
 train_loader = DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0)
 val_loader = DataLoader(val_set, batch_size=2, shuffle=False, num_workers=0)
