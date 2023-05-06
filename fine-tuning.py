@@ -9,8 +9,6 @@ from loss_function import CombinedLoss
 from torchvision.models import vgg19
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
 
-from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
-
 class ImageDataset(Dataset):
     def __init__(self, hr_folder, lr_folder):
         self.hr_folder = hr_folder
