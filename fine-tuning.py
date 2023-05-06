@@ -65,9 +65,8 @@ class ImageDataset(Dataset):
             hr_image = self.hr_transforms(hr_image)
             lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
         else:
-            hr_image, lr_images = self.val_transforms({"hr": hr_image, "lr": lr_images})
-            hr_image = hr_image["hr"]
-            lr_images = hr_image["lr"]
+            hr_image = self.hr_transforms(hr_image)
+            lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
 
         return {"hr": hr_image, "lr": lr_images}
 
