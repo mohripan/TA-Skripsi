@@ -10,6 +10,7 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 from loss_function import CombinedLoss
 from torchvision.models import vgg19
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
+from torchvision.transforms import Lambda
 
 parser = argparse.ArgumentParser(description="RealESRGAN Fine-Tuning")
 parser.add_argument("--hr_folder", type=str, default="Dataset/HighResolution", help="Path to the high-resolution images folder")
@@ -18,6 +19,22 @@ parser.add_argument("--hr_crop_size", type=int, default=512, help="Random crop s
 parser.add_argument("--lr_crop_size", type=int, default=128, help="Random crop size for low-resolution images")
 
 args = parser.parse_args()
+
+class RandomCropHRandLR:
+    def __init__(self, hr_crop_size, lr_crop_size):
+        self.hr_crop_size = hr_crop_size
+        self.lr_crop_size = lr_crop_size
+
+    def __call__(self, hr_image, lr_images):
+        w, h = hr_image.size
+        left = random.randint(0, w - self.hr_crop_size)
+        top = random.randint(0, h - self.hr_crop_size)
+        hr_image = hr_image.crop((left, top, left + self.hr_crop_size, top + self.hr_crop_size))
+
+        lr_left, lr_top = left // 4, top // 4
+        lr_images = {method: img.crop((lr_left, lr_top, lr_left + self.lr_crop_size, lr_top + self.lr_crop_size)) for method, img in lr_images.items()}
+
+        return hr_image, lr_images
 
 class ImageDataset(Dataset):
     def __init__(self, hr_folder, lr_folder, hr_transforms, lr_transforms):
@@ -40,10 +57,19 @@ class ImageDataset(Dataset):
             lr_image = Image.open(img_paths[idx]).convert("RGB")
             lr_images[method] = lr_image
 
-        hr_image = self.hr_transforms(hr_image)
-        lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
+        if hasattr(self, "random_crop"):
+            hr_image, lr_images = self.random_crop(hr_image, lr_images)
+
+        if self.is_train:
+            hr_image = self.hr_transforms(hr_image)
+            lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
+        else:
+            hr_image, lr_images = self.val_transforms({"hr": hr_image, "lr": lr_images})
+            hr_image = hr_image["hr"]
+            lr_images = hr_image["lr"]
 
         return {"hr": hr_image, "lr": lr_images}
+
 
     def __len__(self):
         return len(self.hr_images)
@@ -61,11 +87,17 @@ def split_dataset(hr_folder, lr_folder, train_ratio=0.8):
 
     train_dataset = ImageDataset(hr_folder, lr_folder, train_hr_transforms, train_lr_transforms)
     train_dataset.indices = train_indices
+    train_dataset.random_crop = RandomCropHRandLR(args.hr_crop_size, args.lr_crop_size)
 
     val_dataset = ImageDataset(hr_folder, lr_folder, val_transforms, val_transforms)
     val_dataset.indices = val_indices
 
     return train_dataset, val_dataset
+
+def resize_hr_and_lr(hr_image, lr_images, hr_size, lr_size):
+    hr_image = hr_image.resize(hr_size)
+    lr_images = {method: img.resize(lr_size) for method, img in lr_images.items()}
+    return hr_image, lr_images
 
 # hr_folder = "Dataset/HighResolution"
 # lr_folder = "Dataset/LowResolution"
@@ -84,7 +116,10 @@ train_lr_transforms = Compose([
     ToTensor()
 ])
 
-val_transforms = ToTensor()
+val_transforms = Compose([
+    Lambda(lambda sample: resize_hr_and_lr(sample["hr"], sample["lr"], (args.hr_crop_size, args.hr_crop_size), (args.lr_crop_size, args.lr_crop_size))),
+    ToTensor()
+])
 
 dataset = ImageDataset(args.hr_folder, args.lr_folder, args.hr_crop_size, args.lr_crop_size)
 train_set, val_set = split_dataset(args.hr_folder, args.lr_folder, train_ratio=0.8)
