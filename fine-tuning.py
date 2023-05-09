@@ -46,8 +46,7 @@ class ImageDataset(Dataset):
         self.hr_folder = hr_folder
         self.lr_folders = {
             "bicubic": os.path.join(lr_folder, "bicubic"),
-            "nearest_neighbor": os.path.join(lr_folder, "nearest_neighbor"),
-            "lanczos": os.path.join(lr_folder, "lanczos")
+            "nearest_neighbor": os.path.join(lr_folder, "nearest_neighbor")
         }
         self.hr_images = sorted(glob.glob(f"{hr_folder}/*.*"))
         self.lr_images = {method: sorted(glob.glob(f"{folder}/*.*")) for method, folder in self.lr_folders.items()}
