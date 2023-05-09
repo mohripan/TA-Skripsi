@@ -76,12 +76,13 @@ class ImageDataset(Dataset):
             # Apply the random crop to HR and LR images
             hr_image, lr_images = self.random_crop(hr_image, lr_images)
 
-            # Apply the other HR transformations
-            hr_image = train_hr_transforms(hr_image)
+            # Apply the common transformations to HR and LR images
+            hr_image, lr_images = common_transforms(hr_image, lr_images)
 
-            # Apply LR transformations
+            # Convert HR and LR images to tensors
+            hr_image = ToTensor()(hr_image)
             for method in lr_images.keys():
-                lr_images[method] = train_lr_transforms(lr_images[method])
+                lr_images[method] = ToTensor()(lr_images[method])
         else:
             lr_images = {}
             for method, img_paths in self.lr_images.items():
@@ -94,7 +95,6 @@ class ImageDataset(Dataset):
             hr_image, lr_images = val_transforms_fn(hr_image, lr_images)
 
         return {"hr": hr_image, "lr": lr_images}
-
 
     def __len__(self):
         return len(self.hr_images)
@@ -125,6 +125,21 @@ def resize_hr_and_lr(hr_image, lr_images, hr_size, lr_size):
 
 # hr_folder = "Dataset/HighResolution"
 # lr_folder = "Dataset/LowResolution"
+
+def common_transforms(hr_image, lr_images):
+    # Apply the same RandomHorizontalFlip to both HR and LR images
+    if random.random() < 0.5:
+        hr_image = hr_image.transpose(Image.FLIP_LEFT_RIGHT)
+        for method in lr_images.keys():
+            lr_images[method] = lr_images[method].transpose(Image.FLIP_LEFT_RIGHT)
+    
+    # Apply the same ColorJitter to both HR and LR images
+    color_jitter = ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)
+    hr_image = color_jitter(hr_image)
+    for method in lr_images.keys():
+        lr_images[method] = color_jitter(lr_images[method])
+    
+    return hr_image, lr_images
 
 train_hr_transforms = Compose([
     RandomHorizontalFlip(),
