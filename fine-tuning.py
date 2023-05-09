@@ -1,8 +1,10 @@
 import os
+import sys
 import random
 import torch
 import glob
 import argparse
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import ToTensor, Resize
 from PIL import Image
@@ -12,14 +14,16 @@ from torchvision.models import vgg19
 from torchvision.transforms import RandomCrop, RandomHorizontalFlip, ColorJitter, Compose
 from torchvision.transforms import Lambda
 
+# Add Parser Arguments
 parser = argparse.ArgumentParser(description="RealESRGAN Fine-Tuning")
 parser.add_argument("--hr_folder", type=str, default="Dataset/HighResolution", help="Path to the high-resolution images folder")
 parser.add_argument("--lr_folder", type=str, default="Dataset/LowResolution", help="Path to the low-resolution images folder")
-parser.add_argument("--hr_crop_size", type=int, default=512, help="Random crop size for high-resolution images")
-parser.add_argument("--lr_crop_size", type=int, default=128, help="Random crop size for low-resolution images")
+parser.add_argument("--hr_crop_size", type=int, default=256, help="Random crop size for high-resolution images")
+parser.add_argument("--lr_crop_size", type=int, default=64, help="Random crop size for low-resolution images")
 
 args = parser.parse_args()
 
+# Make my own RandomCrop class so it will matchly crop between HR and LR images
 class RandomCropHRandLR:
     def __init__(self, hr_crop_size, lr_crop_size):
         self.hr_crop_size = hr_crop_size
@@ -32,7 +36,8 @@ class RandomCropHRandLR:
         hr_image = hr_image.crop((left, top, left + self.hr_crop_size, top + self.hr_crop_size))
 
         lr_left, lr_top = left // 4, top // 4
-        lr_images = {method: img.crop((lr_left, lr_top, lr_left + self.lr_crop_size, lr_top + self.lr_crop_size)) for method, img in lr_images.items()}
+        lr_crop_size = self.hr_crop_size // 4
+        lr_images = {method: img.crop((lr_left, lr_top, lr_left + lr_crop_size, lr_top + lr_crop_size)) for method, img in lr_images.items()}
 
         return hr_image, lr_images
 
@@ -54,26 +59,41 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, idx):
         hr_image = Image.open(self.hr_images[idx]).convert("RGB")
-        lr_images = {}
-        for method, img_paths in self.lr_images.items():
-            lr_image = Image.open(img_paths[idx]).convert("RGB")
-            lr_images[method] = lr_image
-
-        if hasattr(self, "random_crop"):
-            hr_image, lr_images = self.random_crop(hr_image, lr_images)
 
         if self.is_train:
-            hr_image = self.hr_transforms(hr_image)
-            lr_images = {method: self.lr_transforms(img) for method, img in lr_images.items()}
+            hr_width, hr_height = hr_image.size
+            lr_width, lr_height = hr_width // 4, hr_height // 4
+            lr_images = {}
+            resampling_methods = {  
+                "bicubic": Image.BICUBIC,
+                "nearest_neighbor": Image.NEAREST,
+                "lanczos": Image.LANCZOS,
+            }
+            for method, resample_mode in resampling_methods.items():
+                lr_image = hr_image.resize((lr_width, lr_height), resample=resample_mode)
+                lr_images[method] = lr_image
+
+            # Apply the random crop to HR and LR images
+            hr_image, lr_images = self.random_crop(hr_image, lr_images)
+
+            # Apply the other HR transformations
+            hr_image = train_hr_transforms(hr_image)
+
+            # Apply LR transformations
+            for method in lr_images.keys():
+                lr_images[method] = train_lr_transforms(lr_images[method])
         else:
-            sample = {"hr": hr_image, "lr": lr_images}
-            transformed_sample = val_transforms_fn(sample)
-            hr_image = transformed_sample["hr"]
-            lr_images = transformed_sample["lr"]
+            lr_images = {}
+            for method, img_paths in self.lr_images.items():
+                lr_image = Image.open(img_paths[idx]).convert("RGB")
+                lr_images[method] = lr_image
+
+            if hasattr(self, "random_crop"):
+                hr_image, lr_images = self.random_crop(hr_image, lr_images)
+
+            hr_image, lr_images = val_transforms_fn(hr_image, lr_images)
 
         return {"hr": hr_image, "lr": lr_images}
-
-
 
 
     def __len__(self):
@@ -107,27 +127,21 @@ def resize_hr_and_lr(hr_image, lr_images, hr_size, lr_size):
 # lr_folder = "Dataset/LowResolution"
 
 train_hr_transforms = Compose([
-    RandomCrop(args.hr_crop_size),
     RandomHorizontalFlip(),
     ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
     ToTensor()
 ])
 
 train_lr_transforms = Compose([
-    RandomCrop(args.lr_crop_size),
-    RandomHorizontalFlip(),
-    ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
     ToTensor()
 ])
 
-def val_transforms_fn(sample):
-    hr_image = sample["hr"]
-    lr_images = sample["lr"]
-
+def val_transforms_fn(hr_image, lr_images):
     hr_image = ToTensor()(hr_image)
     lr_images = {method: ToTensor()(img) for method, img in lr_images.items()}
 
-    return {"hr": hr_image, "lr": lr_images}
+    return hr_image, lr_images
+
 
 val_transforms = Lambda(val_transforms_fn)
 
