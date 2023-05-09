@@ -66,8 +66,7 @@ class ImageDataset(Dataset):
             lr_images = {}
             resampling_methods = {  
                 "bicubic": Image.BICUBIC,
-                "nearest_neighbor": Image.NEAREST,
-                "lanczos": Image.LANCZOS,
+                "nearest_neighbor": Image.NEAREST
             }
             for method, resample_mode in resampling_methods.items():
                 lr_image = hr_image.resize((lr_width, lr_height), resample=resample_mode)
