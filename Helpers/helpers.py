@@ -42,7 +42,7 @@ def sliding_window(image, step_size, window_size):
 def get_image_from_sliding_window(image_path):
     image = cv2.imread(image_path)
     images = []
-    winH, winW = (300, 300)
+    winH, winW = (600, 600)
     
     for (x, window) in sliding_window(image, step_size = 32, window_size = (winW, winH)):
         if image.shape[1] > image.shape[0]:
