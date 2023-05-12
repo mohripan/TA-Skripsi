@@ -71,6 +71,7 @@ def forward_prop(image, scale = 2, path = 'weights/RealESRGAN_x2.pth'):
     
     for i, img in enumerate(image):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        print(f'berhasil {i+1}')
         sr_image = model.predict(img)
         images.append(sr_image)
         
