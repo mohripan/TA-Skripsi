@@ -1,6 +1,4 @@
-<center>
 [![Colab](https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange)](https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing)
-</center>
 
 <br />
 <div align="center">
@@ -57,11 +55,11 @@ You can customize the training process by modifying the `fine-tuning.py` script:
 ## Result
 
 <div align="center">
-    <img src="hasil2.jpg" alt="Logo" height = 255 Width = 255>
+    <img src="hasil2.jpg" alt="Logo">
 </div>
 <br>
 <div align="center">
-    <img src="hasil3.jpg" alt="Logo" height = 255 width = 255>
+    <img src="hasil3.jpg" alt="Logo">
 </div>
 
 ## Acknowledgements
