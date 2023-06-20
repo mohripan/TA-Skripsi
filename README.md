@@ -1,30 +1,10 @@
 <center>
-
-[![Linkedin]([[https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange](https://play-lh.googleusercontent.com/kMofEFLjobZy_bCuaiDogzBcUT-dz3BBbOrIEjJ-hqOabjK8ieuevGe6wlTD15QzOqw)](https://play-lh.googleusercontent.com/kMofEFLjobZy_bCuaiDogzBcUT-dz3BBbOrIEjJ-hqOabjK8ieuevGe6wlTD15QzOqw=w240-h480-rw))]([https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing](https://www.linkedin.com/in/mohammad-ripan-b68522141/))
 [![Colab](https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange)](https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing)
-
 </center>
 
 <br />
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
     <img src="hasil1.jpg" alt="Logo">
-  </a>
-
-  <h3 align="center">Best-README-Template</h3>
-
-  <p align="center">
-    An awesome README template to jumpstart your projects!
-    <br />
-    <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/othneildrew/Best-README-Template">View Demo</a>
-    ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
-  </p>
 </div>
 
 # RealESRGAN Fine-tuning
@@ -73,6 +53,16 @@ You can customize the training process by modifying the `fine-tuning.py` script:
 - Change the number of epochs for training by updating the `num_epochs` variable.
 - Change the learning rate for the optimizer by updating the `lr` parameter in `torch.optim.Adam`.
 - Change the batch size by updating the `batch_size` parameter in the `DataLoader` initialization.
+
+## Result
+
+<div align="center">
+    <img src="hasil2.jpg" alt="Logo">
+</div>
+
+<div align="center">
+    <img src="hasil3.jpg" alt="Logo">
+</div>
 
 ## Acknowledgements
 
