@@ -59,7 +59,7 @@ You can customize the training process by modifying the `fine-tuning.py` script:
 <div align="center">
     <img src="hasil2.jpg" alt="Logo">
 </div>
-
+<br>
 <div align="center">
     <img src="hasil3.jpg" alt="Logo">
 </div>
