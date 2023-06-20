@@ -4,7 +4,7 @@ demo for Real-ESRGAN: [![Colab](https://img.shields.io/static/v1?label=Demo&mess
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="hasil1.jpg" alt="Logo" width="80" height="80">
+    <img src="hasil1.jpg" alt="Logo">
   </a>
 
   <h3 align="center">Best-README-Template</h3>
