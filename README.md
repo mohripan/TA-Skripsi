@@ -1,3 +1,28 @@
+[![LinkedIn][linkedin-shield]][[linkedin-url](https://www.linkedin.com/in/mohammad-ripan-b68522141/)]
+demo for Real-ESRGAN: [![Colab](https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange)](https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing)
+
+<br />
+<div align="center">
+  <a href="https://github.com/othneildrew/Best-README-Template">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Best-README-Template</h3>
+
+  <p align="center">
+    An awesome README template to jumpstart your projects!
+    <br />
+    <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/othneildrew/Best-README-Template">View Demo</a>
+    ·
+    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
+  </p>
+</div>
+
 # RealESRGAN Fine-tuning
 
 This repository contains an implementation for fine-tuning RealESRGAN on your custom dataset. RealESRGAN is a state-of-the-art image super-resolution model based on the ESRGAN architecture. By fine-tuning the pre-trained RealESRGAN model on your specific dataset, you can achieve even better results for your specific use case.
