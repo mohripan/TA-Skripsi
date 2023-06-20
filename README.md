@@ -1,5 +1,5 @@
-[![LinkedIn][linkedin-shield]][[linkedin-url](https://www.linkedin.com/in/mohammad-ripan-b68522141/)]
-demo for Real-ESRGAN: [![Colab](https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange)](https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing)
+My Linkedin: [![Linkedin]([https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange](https://play-lh.googleusercontent.com/kMofEFLjobZy_bCuaiDogzBcUT-dz3BBbOrIEjJ-hqOabjK8ieuevGe6wlTD15QzOqw))]([https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing](https://www.linkedin.com/in/mohammad-ripan-b68522141/))
+Face Restoration Playground: [![Colab](https://img.shields.io/static/v1?label=Demo&message=Colab&color=orange)](https://colab.research.google.com/drive/1RBgZxf8h_LE1uwO7CT6mJBBvfvhWB0o_?usp=sharing)
 
 <br />
 <div align="center">
