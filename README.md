@@ -57,11 +57,11 @@ You can customize the training process by modifying the `fine-tuning.py` script:
 ## Result
 
 <div align="center">
-    <img src="hasil2.jpg" alt="Logo">
+    <img src="hasil2.jpg" alt="Logo" height = 255 Width = 255>
 </div>
 <br>
 <div align="center">
-    <img src="hasil3.jpg" alt="Logo">
+    <img src="hasil3.jpg" alt="Logo" height = 255 width = 255>
 </div>
 
 ## Acknowledgements
